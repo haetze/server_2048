@@ -1,3 +1,5 @@
+#![allow(unused_must_use)]
+
 extern crate lib_2048;
 
 mod commands;
@@ -6,7 +8,6 @@ use std::net::TcpListener;
 use std::net::TcpStream;
 use std::net::SocketAddr;
 use std::env;
-use std::io::Read;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::io::Write;
@@ -15,7 +16,7 @@ use commands::Command;
 
 
 
-const default_port: u16 = 4343;
+const DEFAULT_PORT: u16 = 4343;
 
 
 
@@ -23,9 +24,9 @@ fn main() {
     let port_requested: u16 = match env::args().skip(1).next() {
         Some(p) => match p.parse() {
             Ok(port) => port,
-            Err(_)   => default_port,
+            Err(_)   => DEFAULT_PORT,
         },
-        None    => default_port,
+        None    => DEFAULT_PORT,
     };
     println!("{}", port_requested);
     match TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], port_requested))) {
@@ -50,7 +51,7 @@ fn handle_messages(mut socket: BufReader<TcpStream>) {
         let mut command = String::new();
         match socket.read_line(&mut command) {
             Ok(2) => continue,
-            Ok(n) => {},
+            Ok(_) => {},
             Err(_) => {
                 println!("Error while reading");
                 break;
