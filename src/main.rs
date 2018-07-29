@@ -133,7 +133,7 @@ fn handle_command(mut field_option: &mut Option<Field>, command: Command, mut so
 fn print_result(field: &Option<Field>, socket: &mut BufReader<TcpStream>) {
     match field {
         None => {
-            socket.get_mut().write(b"Empty");
+            socket.get_mut().write(b"Empty\n");
         },
 
         Some(field) => {
