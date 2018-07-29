@@ -15,12 +15,12 @@ use commands::Command;
 
 
 
-const default_port: usize = 4343;
+const default_port: u16 = 4343;
 
 
 
 fn main() {
-    let port_requested: usize = match env::args().skip(1).next() {
+    let port_requested: u16 = match env::args().skip(1).next() {
         Some(p) => match p.parse() {
             Ok(port) => port,
             Err(_)   => default_port,
