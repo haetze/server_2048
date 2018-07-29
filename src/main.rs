@@ -6,6 +6,8 @@ use std::net::TcpListener;
 use std::net::TcpStream;
 use std::env;
 use std::io::Read;
+use std::io::BufRead;
+use std::io::BufReader;
 use std::io::Write;
 use lib_2048::data::Field;
 use commands::Command;
@@ -29,7 +31,10 @@ fn main() {
         Err(_) => println!("Port unavailable, restart with different port."),
         Ok(listener) => {
             match listener.accept() {
-                Ok((socket, _)) => handle_messages(socket),
+                Ok((socket, _)) => {
+                    let socket = BufReader::new(socket);
+                    handle_messages(socket)
+                },
                 Err(_)          => println!("Fail to accept connection, try again."),
             }
         },
@@ -37,12 +42,12 @@ fn main() {
     
 }
 
-fn handle_messages(mut socket: TcpStream) {
+fn handle_messages(mut socket: BufReader<TcpStream>) {
     let mut field = None;
 
     loop {
         let mut command = String::new();
-        socket.read_to_string(&mut command);
+        socket.read_line(&mut command);
         match command.trim() {
             "right" => handle_command(&mut field, Command::Right, &mut socket),
             "left"  => handle_command(&mut field, Command::Left , &mut socket),
@@ -58,7 +63,7 @@ fn handle_messages(mut socket: TcpStream) {
                     
                     handle_command(&mut field, Command::New(scale), &mut socket)
                 } else {
-                    socket.write(b"Unsupported Command");
+                    socket.get_mut().write(b"Unsupported Command");
                 }
             },
         }
@@ -66,13 +71,13 @@ fn handle_messages(mut socket: TcpStream) {
 }
 
 
-fn handle_command(mut field_option: &mut Option<Field>, command: Command, mut socket: &mut TcpStream) {
+fn handle_command(mut field_option: &mut Option<Field>, command: Command, mut socket: &mut BufReader<TcpStream>) {
     use std::mem::swap;
     
     let mut field = None;
     swap(&mut field, &mut field_option);
 
-    let mut result_field = match field {
+    let result_field = match field {
         None => {
             match command {
                 Command::New(n) => Some(Field::new(n)),
@@ -101,12 +106,35 @@ fn handle_command(mut field_option: &mut Option<Field>, command: Command, mut so
             }
         },
     };
+    
+    let mut result_field = match result_field {
+        None => None,
+        Some(mut field) => {
+            field.insert_random();
+            Some(field)
+        },
+    };
+    
     print_result(&result_field, &mut socket);
     swap(&mut result_field, &mut field_option);
 
 }
 
-fn print_result(field: &Option<Field>, socket: &mut TcpStream) {
-    
+fn print_result(field: &Option<Field>, socket: &mut BufReader<TcpStream>) {
+    match field {
+        None => {
+            socket.get_mut().write(b"Empty");
+        },
+
+        Some(field) => {
+            let mut string = String::new();
+            for row in &field.rows {
+                let s = format!("{:?}", row.row);
+                string.push_str(&s);
+                string.push_str(&";");
+            }
+            socket.get_mut().write(string.as_bytes());
+        },
+    }
 }
  
