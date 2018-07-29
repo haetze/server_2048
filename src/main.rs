@@ -61,7 +61,7 @@ fn handle_messages(mut socket: BufReader<TcpStream>) {
             "left"  => handle_command(&mut field, Command::Left , &mut socket),
             "up"    => handle_command(&mut field, Command::Up   , &mut socket),
             "down"  => handle_command(&mut field, Command::Down , &mut socket),
-            "exit"  => return,
+            "exit"  => break,
             other   => {
                 let commands: Vec<&str> = other.split_whitespace().collect();
                 if let "new" = commands[0] {

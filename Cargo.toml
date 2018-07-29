@@ -6,6 +6,6 @@ authors = ["Richard Stewing <richy.sting@gmail.com>"]
 [dependencies]
 
 [dependencies.lib_2048]
-git = "https://github.com/haetze/lib-2048"
+git = "https://github.com/haetze/lib_2048"
 rev = "37af1c229dc67c7c8e0ee971fc4a556ff132cc97"
 
