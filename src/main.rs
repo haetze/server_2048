@@ -47,12 +47,21 @@ fn handle_messages(mut socket: BufReader<TcpStream>) {
 
     loop {
         let mut command = String::new();
-        socket.read_line(&mut command);
+        match socket.read_line(&mut command) {
+            Ok(2) => continue,
+            Ok(n) => {},
+            Err(_) => {
+                println!("Error while reading");
+                break;
+            },
+        };
+
         match command.trim() {
             "right" => handle_command(&mut field, Command::Right, &mut socket),
             "left"  => handle_command(&mut field, Command::Left , &mut socket),
             "up"    => handle_command(&mut field, Command::Up   , &mut socket),
             "down"  => handle_command(&mut field, Command::Down , &mut socket),
+            "exit"  => return,
             other   => {
                 let commands: Vec<&str> = other.split_whitespace().collect();
                 if let "new" = commands[0] {
@@ -63,7 +72,7 @@ fn handle_messages(mut socket: BufReader<TcpStream>) {
                     
                     handle_command(&mut field, Command::New(scale), &mut socket)
                 } else {
-                    socket.get_mut().write(b"Unsupported Command");
+                    socket.get_mut().write(b"Unsupported Command\n");
                 }
             },
         }
@@ -133,6 +142,7 @@ fn print_result(field: &Option<Field>, socket: &mut BufReader<TcpStream>) {
                 string.push_str(&s);
                 string.push_str(&";");
             }
+            string.push_str(&"\n");
             socket.get_mut().write(string.as_bytes());
         },
     }
