@@ -88,6 +88,8 @@ fn handle_command(mut field_option: &mut Option<Field>, command: Command, mut so
     let mut field = None;
     swap(&mut field, &mut field_option);
 
+    let tmp_field = field.clone();
+    
     let result_field = match field {
         None => {
             match command {
@@ -118,13 +120,15 @@ fn handle_command(mut field_option: &mut Option<Field>, command: Command, mut so
         },
     };
     
-    let mut result_field = match result_field {
-        None => None,
-        Some(mut field) => {
-            field.insert_random();
-            Some(field)
-        },
-    };
+    let mut result_field = result_field.map(|mut f| {
+        if f != tmp_field.unwrap() {
+            f.insert_random();
+        }
+        f
+    });
+        
+                
+       
     
     print_result(&result_field, &mut socket);
     swap(&mut result_field, &mut field_option);
