@@ -121,8 +121,15 @@ fn handle_command(mut field_option: &mut Option<Field>, command: Command, mut so
     };
     
     let mut result_field = result_field.map(|mut f| {
-        if f != tmp_field.unwrap() {
-            f.insert_random();
+        match tmp_field {
+            None => {
+                f.insert_random();
+            },
+            Some(field) => {
+                if field != f {
+                    f.insert_random();
+                }
+            },       
         }
         f
     });
