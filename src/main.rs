@@ -4,6 +4,7 @@ mod commands;
 
 use std::net::TcpListener;
 use std::net::TcpStream;
+use std::net::SocketAddr;
 use std::env;
 use std::io::Read;
 use std::io::BufRead;
@@ -27,7 +28,7 @@ fn main() {
         None    => default_port,
     };
     println!("{}", port_requested);
-    match TcpListener::bind("127.0.0.1:8080") {
+    match TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], port_requested))) {
         Err(_) => println!("Port unavailable, restart with different port."),
         Ok(listener) => {
             match listener.accept() {
