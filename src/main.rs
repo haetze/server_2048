@@ -31,11 +31,13 @@ fn main() {
     println!("{}", port_requested);
     match TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], port_requested))) {
         Err(_) => println!("Port unavailable, restart with different port."),
-        Ok(listener) => {
+        Ok(listener) => loop {
             match listener.accept() {
                 Ok((socket, _)) => {
+                    std::thread::spawn(|| {
                     let socket = BufReader::new(socket);
                     handle_messages(socket)
+                    });
                 },
                 Err(_)          => println!("Fail to accept connection, try again."),
             }
