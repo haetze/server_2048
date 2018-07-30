@@ -67,6 +67,7 @@ fn handle_messages(mut socket: BufReader<TcpStream>) {
             "exit"  => break,
             other   => {
                 let commands: Vec<&str> = other.split_whitespace().collect();
+                if commands.len() == 0 { continue; }
                 if let "new" = commands[0] {
                     let scale = match commands[1].parse::<usize>() {
                         Ok(n) => n,
