@@ -21,6 +21,7 @@ const DEFAULT_PORT: u16 = 4343;
 
 
 fn main() {
+    let mut number_of_handled_connection = 0;
     let port_requested: u16 = match env::args().skip(1).next() {
         Some(p) => match p.parse() {
             Ok(port) => port,
@@ -28,15 +29,17 @@ fn main() {
         },
         None    => DEFAULT_PORT,
     };
-    println!("{}", port_requested);
+    println!("Running on Port: {}", port_requested);
     match TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], port_requested))) {
         Err(_) => println!("Port unavailable, restart with different port."),
         Ok(listener) => loop {
             match listener.accept() {
                 Ok((socket, _)) => {
-                    std::thread::spawn(|| {
+                    number_of_handled_connection = number_of_handled_connection + 1;
+                    std::thread::spawn(move || {
                     let socket = BufReader::new(socket);
-                    handle_messages(socket)
+                        handle_messages(socket);
+                        println!("Close #{} connection", number_of_handled_connection);
                     });
                 },
                 Err(_)          => println!("Fail to accept connection, try again."),
@@ -52,6 +55,7 @@ fn handle_messages(mut socket: BufReader<TcpStream>) {
     loop {
         let mut command = String::new();
         match socket.read_line(&mut command) {
+            Ok(0) => break,
             Ok(_) => {},
             Err(_) => {
                 println!("Error while reading");
