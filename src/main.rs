@@ -52,7 +52,6 @@ fn handle_messages(mut socket: BufReader<TcpStream>) {
     loop {
         let mut command = String::new();
         match socket.read_line(&mut command) {
-            Ok(2) => continue,
             Ok(_) => {},
             Err(_) => {
                 println!("Error while reading");
