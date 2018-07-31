@@ -1,6 +1,7 @@
 #![allow(unused_must_use)]
 
 extern crate lib_2048;
+extern crate futures;
 
 mod commands;
 
@@ -11,8 +12,15 @@ use std::env;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::io::Write;
+
 use lib_2048::data::Field;
+
+use futures::future::AndThen;
+use futures::future::Future;
+use futures::future::{result, ok};
+
 use commands::Command;
+
 
 
 
@@ -38,7 +46,7 @@ fn main() {
                     number_of_handled_connection = number_of_handled_connection + 1;
                     std::thread::spawn(move || {
                     let socket = BufReader::new(socket);
-                        handle_messages(socket);
+                        handle_messages(socket).wait();
                         println!("Close #{} connection", number_of_handled_connection);
                     });
                 },
@@ -49,42 +57,56 @@ fn main() {
     
 }
 
-fn handle_messages(mut socket: BufReader<TcpStream>) {
+fn handle_messages(mut socket: BufReader<TcpStream>) -> impl Future<Item = usize, Error = std::io::Error> {
     let mut field = None;
 
-    loop {
-        let mut command = String::new();
-        match socket.read_line(&mut command) {
-            Ok(0) => break,
-            Ok(_) => {},
-            Err(_) => {
-                println!("Error while reading");
-                break;
-            },
-        };
-
+    let mut command = String::new();
+    result(socket.read_line(&mut command)).and_then(move |_| {
+        //     Ok(0) => break,
+        //     Ok(_) => {},
+        //     Err(_) => {
+        //         println!("Error while reading");
+        //         break;
+        //     },
+        // });
+        
         match command.trim() {
-            "right" => handle_command(&mut field, Command::Right, &mut socket),
-            "left"  => handle_command(&mut field, Command::Left , &mut socket),
-            "up"    => handle_command(&mut field, Command::Up   , &mut socket),
-            "down"  => handle_command(&mut field, Command::Down , &mut socket),
-            "exit"  => break,
+            "right" => {
+                handle_command(&mut field, Command::Right, &mut socket);
+                handle_messages(socket)
+            },
+            "left"  => {
+                handle_command(&mut field, Command::Left , &mut socket);
+                handle_messages(socket)
+            },
+            "up"    => {
+                handle_command(&mut field, Command::Up   , &mut socket);
+                handle_messages(socket)
+            },
+            "down"  => {
+                handle_command(&mut field, Command::Down , &mut socket);
+                handle_messages(socket)
+            },
+            "exit"  => handle_messages(socket),
             other   => {
                 let commands: Vec<&str> = other.split_whitespace().collect();
-                if commands.len() == 0 { continue; }
-                if let "new" = commands[0] {
-                    let scale = match commands[1].parse::<usize>() {
-                        Ok(n) => n,
-                        Err(_) => 4,
-                    };
-                    
-                    handle_command(&mut field, Command::New(scale), &mut socket)
-                } else {
-                    socket.get_mut().write(b"Unsupported Command\n");
-                }
+                if commands.len() == 0 { return handle_messages(socket); }
+                    if let "new" = commands[0] {
+                        let scale = match commands[1].parse::<usize>() {
+                            Ok(n) => n,
+                            Err(_) => 4,
+                        };
+                        
+                        handle_command(&mut field, Command::New(scale), &mut socket);
+                        handle_messages(socket)
+                    } else {
+                        socket.get_mut().write(b"Unsupported Command\n");
+                        handle_messages(socket)
+                    }
             },
         }
-    }
+    })
+        
 }
 
 
